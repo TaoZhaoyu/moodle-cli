@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "moodle": {
+      "command": "moodle-lms",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "name": "moodle-cli",
+  "version": "0.1.0",
+  "description": "General-purpose read-only Moodle CLI and MCP with multiple site/account profiles and local authorization",
+  "type": "module",
+  "license": "MIT",
+  "author": "Moodle CLI contributors",
+  "keywords": [
+    "moodle",
+    "mcp",
+    "education"
+  ],
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "bin": {
+    "moodle-lms": "bin/lms.js"
+  },
+  "main": "dist/src/auth/app.js",
+  "files": [
+    "bin",
+    "dist",
+    "plugins/moodle-cli",
+    "docs",
+    "README.md",
+    "PRIVACY.md",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --import tsx --test test/*.test.ts",
+    "start": "node bin/lms.js",
+    "auth:app": "electron .",
+    "pack:cli": "npm run build && npm pack",
+    "prepack": "npm run build",
+    "auth:install": "node node_modules/electron/install.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "@napi-rs/keyring": "2.1.0",
+    "ajv": "8.20.0",
+    "commander": "14.0.3",
+    "ical-generator": "10.0.0",
+    "proper-lockfile": "4.1.2",
+    "zod": "3.25.76"
+  },
+  "optionalDependencies": {
+    "electron": "44.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.5.2",
+    "@types/proper-lockfile": "4.1.4",
+    "tsx": "4.23.15",
+    "typescript": "5.9.2"
+  },
+  "private": true
+}
