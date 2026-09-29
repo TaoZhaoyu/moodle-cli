@@ -6,6 +6,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { MoodleClient, READ_FUNCTIONS } from '../src/platforms/moodle/client.js';
 import { createMoodleServer, runtime } from '../src/platforms/moodle/runtime.js';
 import { mobileLaunch, mobileCallback } from '../src/auth/moodle-mobile.js';
+import { sameHostHttpsUpgrade } from '../src/auth/cookies.js';
 import { platformIds } from '../src/platforms/registry.js';
 import { isAllowed } from '../src/policy.js';
 import { LmsError } from '../src/errors.js';
@@ -78,6 +79,13 @@ test('mobile authorization binds callback to site and fresh passport and discard
   assert.throws(() => mobileCallback(url, origin, other.passport));
   assert.throws(() => mobileCallback(url, 'https://evil.edu', launch.passport));
   for (const bad of ['https://evil.edu', 'moodlemobile://token=%zz', 'moodlemobile://token=bad', `${url}&extra=1`]) assert.throws(() => mobileCallback(bad, origin, launch.passport));
+});
+test('same-host HTTP login redirects are upgraded locally without allowing plaintext or cross-host navigation', () => {
+  const configured = 'https://moodle.hsu.edu.hk';
+  assert.equal(sameHostHttpsUpgrade('http://moodle.hsu.edu.hk/mdl-login/', configured), 'https://moodle.hsu.edu.hk/mdl-login/');
+  assert.equal(sameHostHttpsUpgrade('https://moodle.hsu.edu.hk/mdl-login/', configured), null);
+  assert.equal(sameHostHttpsUpgrade('http://sso.hsu.edu.hk/login', configured), null);
+  assert.equal(sameHostHttpsUpgrade('http://user:pass@moodle.hsu.edu.hk/login', configured), null);
 });
 test('Moodle rejects cookie credentials rather than pretending they are REST tokens', async () => {
   await rejects(runtime.validate({ origin, profileId: 'synthetic', stateHome: '/tmp/unused' }, { kind: 'cookie', value: 'MoodleSession=synthetic' }), 'AUTH_REQUIRED');

@@ -20,3 +20,17 @@ export function cookieHeader(platform: Platform, origin: string, cookies: LoginC
 export function allowedNavigation(url: string) {
   try { const u = new URL(url); return u.protocol === 'https:' && !u.username && !u.password; } catch { return false; }
 }
+
+/** Rewrite a plaintext redirect only when it targets the exact configured Moodle host. */
+export function sameHostHttpsUpgrade(url: string, configuredOrigin: string): string | null {
+  try {
+    const target = new URL(url);
+    const configured = new URL(configuredOrigin);
+    if (target.protocol !== 'http:' || target.hostname !== configured.hostname || target.username || target.password) return null;
+    target.protocol = 'https:';
+    target.port = configured.port;
+    return target.href;
+  } catch {
+    return null;
+  }
+}

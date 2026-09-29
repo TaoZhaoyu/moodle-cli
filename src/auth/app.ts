@@ -1,8 +1,8 @@
-import { app, BrowserWindow, ipcMain, session, type Session as ElectronSession } from 'electron';
+import { app, BrowserWindow, ipcMain, session, type Event as ElectronEvent, type Session as ElectronSession } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { getProfile, loadConfig, Platform, platforms, type Profile, type Platform as PlatformType } from '../config.js';
-import { allowedNavigation } from './cookies.js';
+import { allowedNavigation, sameHostHttpsUpgrade } from './cookies.js';
 import { validateInWorker } from './validate.js';
 import { authorizationHTML } from './ui.js';
 import { getPlatform } from '../platforms/registry.js';
@@ -15,15 +15,25 @@ const fromProfile = arg('--profile');
 const directLogin = fromCLI && Boolean(fromProfile);
 const push = async () => { const c = await loadConfig(); const s = { profiles: c.profiles, active: fromProfile ?? c.active, lockedProfile: fromProfile, busy, message }; if (controller && !controller.isDestroyed()) controller.webContents.send('lms:update', s); return s; };
 
-function harden(win: BrowserWindow, receive: (url: string) => boolean) {
-  win.webContents.on('will-navigate', (event, url) => { if (receive(url) || !allowedNavigation(url)) event.preventDefault(); });
-  win.webContents.on('will-redirect', (event, url) => { if (receive(url) || !allowedNavigation(url)) event.preventDefault(); });
+function harden(win: BrowserWindow, receive: (url: string) => boolean, configuredOrigin: string) {
+  const guard = (event: ElectronEvent, url: string) => {
+    if (receive(url)) { event.preventDefault(); return; }
+    const upgraded = sameHostHttpsUpgrade(url, configuredOrigin);
+    if (upgraded) {
+      event.preventDefault();
+      void win.loadURL(upgraded).catch(() => {});
+      return;
+    }
+    if (!allowedNavigation(url)) event.preventDefault();
+  };
+  win.webContents.on('will-navigate', guard);
+  win.webContents.on('will-redirect', guard);
   win.webContents.on('will-attach-webview', event => event.preventDefault());
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (receive(url) || !allowedNavigation(url)) return { action: 'deny' };
     return { action: 'allow', overrideBrowserWindowOptions: { parent: win, webPreferences: { session: win.webContents.session, nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true } } };
   });
-  win.webContents.on('did-create-window', child => harden(child, receive));
+  win.webContents.on('did-create-window', child => harden(child, receive, configuredOrigin));
 }
 async function authorize(p: Profile, platform: PlatformType, ephemeral: ElectronSession, signal: AbortSignal) {
   await new Promise<void>((resolve, reject) => {
@@ -60,7 +70,7 @@ async function authorize(p: Profile, platform: PlatformType, ephemeral: Electron
       })();
       return true;
     };
-    harden(win, receive);
+    harden(win, receive, p[platform]!);
     // Moodle returns to the mobile launch after its own SSO/MFA flow. No page JS injection.
     void win.loadURL(launch.url).catch(() => { if (!done && !validating) { message = '无法加载 Moodle 授权页。请检查网络、移动端服务设置或关闭窗口重试。'; void push(); } });
   });

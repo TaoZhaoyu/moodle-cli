@@ -1,6 +1,6 @@
 {
   "name": "moodle-cli",
-  "version": "0.1.0+codex.20260929122305",
+  "version": "0.1.0+codex.20260929131105",
   "description": "General-purpose read-only Moodle assistant with multiple school/account profiles and local authorization.",
   "author": {
     "name": "TaoZhaoyu and contributors",
