@@ -5,6 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "Moodle CLI contributors",
+  "homepage": "https://github.com/TaoZhaoyu/moodle-cli#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TaoZhaoyu/moodle-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TaoZhaoyu/moodle-cli/issues"
+  },
   "keywords": [
     "moodle",
     "mcp",
